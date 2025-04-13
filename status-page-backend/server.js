@@ -25,8 +25,13 @@ const app = express();
 
 // Updated CORS configuration
 app.use(cors({
-  origin: 'http://localhost:8080', // Must be specific origin, not wildcard
-  credentials: true                // Allow credentials
+  origin: process.env.NODE_ENV === 'production' 
+    ? [
+        'https://status-app-backend-kow1.onrender.com', 
+        'https://your-custom-domain.com'
+      ] 
+    : 'http://localhost:8080',
+  credentials: true
 }));
 
 app.use(express.json());
