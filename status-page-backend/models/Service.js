@@ -15,6 +15,12 @@ const serviceSchema = new mongoose.Schema({
     enum: ['operational', 'degraded_performance', 'partial_outage', 'major_outage'],
     default: 'operational'
   },
+  group: {
+    type: String,
+    enum: ['Frontend Services', 'Backend Services', 'Billing Services', 'Other'],
+    required: [true, 'Service group is required'],
+    default: 'Other'
+  },
   organizationId: {
     type: String,
     required: [true, 'Organization ID is required'],

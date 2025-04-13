@@ -1,13 +1,13 @@
 import express from 'express';
-import { ClerkExpressRequireAuth } from '@clerk/clerk-sdk-node';
+import { requireAuth } from '@clerk/express';
 import { requireOrganization } from '../middleware/auth.js';
 import Incident from '../models/Incident.js';
-import Service from '../models/service.js';
+import Service from '../models/Service.js';
 
 const router = express.Router();
 
 // All routes require authentication
-router.use(ClerkExpressRequireAuth());
+router.use(requireAuth());
 
 // Get all incidents for the current organization
 router.get('/', requireOrganization, async (req, res) => {
@@ -26,6 +26,14 @@ router.get('/', requireOrganization, async (req, res) => {
 router.post('/', requireOrganization, async (req, res) => {
   try {
     const { title, type, impact, serviceIds } = req.body;
+    
+    // Validate required fields
+    if (!title || !type || !serviceIds || !Array.isArray(serviceIds) || serviceIds.length === 0) {
+      return res.status(400).json({ 
+        message: 'Missing required fields: title, type, and at least one serviceId' 
+      });
+    }
+    
     const { userId, orgId } = req.auth;
     
     // Verify that all services belong to the organization

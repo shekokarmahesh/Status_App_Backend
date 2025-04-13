@@ -1,19 +1,25 @@
 import express from 'express';
-import { ClerkExpressRequireAuth } from '@clerk/clerk-sdk-node';
+import { requireAuth } from '@clerk/express';
 import { requireOrganization, requireAdmin } from '../middleware/auth.js';
-import Service from '../models/service.js';
+import Service from '../models/Service.js';
 
 const router = express.Router();
 
 // All routes require authentication
-router.use(ClerkExpressRequireAuth());
+router.use(requireAuth());
 
 // Get all services for the current organization
 router.get('/', requireOrganization, async (req, res) => {
   try {
     const { orgId } = req.auth;
+    const { group } = req.query; // Allow filtering by group
     
-    const services = await Service.find({ organizationId: orgId });
+    const query = { organizationId: orgId };
+    if (group) {
+      query.group = group;
+    }
+    
+    const services = await Service.find(query);
     res.json({ services });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -23,13 +29,14 @@ router.get('/', requireOrganization, async (req, res) => {
 // Create a new service
 router.post('/', requireOrganization, async (req, res) => {
   try {
-    const { name, description } = req.body;
+    const { name, description, group } = req.body;
     const { userId, orgId } = req.auth;
     
     const service = await Service.create({
       name,
       description,
       status: 'operational',
+      group: group || 'Other', // Use provided group or default to 'Other'
       organizationId: orgId,
       createdBy: userId
     });
@@ -63,12 +70,18 @@ router.get('/:id', requireOrganization, async (req, res) => {
 // Update a service
 router.patch('/:id', requireOrganization, async (req, res) => {
   try {
-    const { name, description, status } = req.body;
+    const { name, description, status, group } = req.body;
     const { orgId } = req.auth;
+    
+    const updateData = {};
+    if (name !== undefined) updateData.name = name;
+    if (description !== undefined) updateData.description = description;
+    if (status !== undefined) updateData.status = status;
+    if (group !== undefined) updateData.group = group;
     
     const service = await Service.findOneAndUpdate(
       { _id: req.params.id, organizationId: orgId },
-      { name, description, status },
+      updateData,
       { new: true, runValidators: true }
     );
     
@@ -83,7 +96,7 @@ router.patch('/:id', requireOrganization, async (req, res) => {
 });
 
 // Delete a service
-router.delete('/:id', requireOrganization, requireAdmin, async (req, res) => {
+router.delete('/:id', requireOrganization,  async (req, res) => {
   try {
     const { orgId } = req.auth;
     
@@ -97,6 +110,29 @@ router.delete('/:id', requireOrganization, requireAdmin, async (req, res) => {
     }
     
     res.json({ message: 'Service deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get services grouped by their group
+router.get('/by-group', requireOrganization, async (req, res) => {
+  try {
+    const { orgId } = req.auth;
+    
+    const services = await Service.find({ organizationId: orgId });
+    
+    // Group services by their group field
+    const groupedServices = services.reduce((acc, service) => {
+      const group = service.group || 'Other';
+      if (!acc[group]) {
+        acc[group] = [];
+      }
+      acc[group].push(service);
+      return acc;
+    }, {});
+    
+    res.json({ groupedServices });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

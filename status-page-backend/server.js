@@ -2,22 +2,35 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
-import { ClerkExpressWithAuth, ClerkExpressRequireAuth } from '@clerk/clerk-sdk-node';
+import { clerkMiddleware, requireAuth } from '@clerk/express';
+import serviceRoutes from './routes/serviceRoutes.js';
+import incidentRoutes from './routes/incidentRoutes.js';
+import maintenanceRoutes from './routes/maintenanceRoutes.js';
+import websiteRoutes from './routes/websiteRoutes.js'; // Add website routes
+import errorHandler from './middleware/errorHandler.js';
 
 // Load environment variables
 dotenv.config();
 
 // Connect to MongoDB
 mongoose
-  .connect(process.env.MONGODB_URI)
+  .connect(process.env.MONGODB_URI, {
+    serverSelectionTimeoutMS: 5000,
+    maxPoolSize: 10,
+  })
   .then(() => console.log('Connected to MongoDB'))
   .catch((err) => console.error('MongoDB connection error:', err));
 
 const app = express();
 
-// Middleware
-app.use(cors());
+// Updated CORS configuration
+app.use(cors({
+  origin: 'http://localhost:8080', // Must be specific origin, not wildcard
+  credentials: true                // Allow credentials
+}));
+
 app.use(express.json());
+app.use(clerkMiddleware());
 
 // Routes
 app.get('/api/public', (req, res) => {
@@ -26,7 +39,7 @@ app.get('/api/public', (req, res) => {
 
 // Protected route with Clerk authentication
 app.get('/api/protected', 
-  ClerkExpressRequireAuth(),
+  requireAuth(),
   (req, res) => {
     res.json({ 
       message: 'This is a protected endpoint',
@@ -36,11 +49,14 @@ app.get('/api/protected',
   }
 );
 
+// Mount route handlers
+app.use('/api/services', serviceRoutes);
+app.use('/api/incidents', incidentRoutes);
+app.use('/api/maintenance', maintenanceRoutes);
+app.use('/api/v1/website', websiteRoutes); // Mount website routes
+
 // Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Something went wrong!' });
-});
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 5050;
 app.listen(PORT, () => {

@@ -1,8 +1,8 @@
-import { clerkClient } from '@clerk/clerk-sdk-node';
+import { clerkClient } from '@clerk/express';
 
 export const requireOrganization = async (req, res, next) => {
   try {
-    // ClerkExpressRequireAuth middleware has already verified authentication
+    // clerkMiddleware has already verified authentication
     // and attached req.auth
     
     const { userId, orgId } = req.auth;
