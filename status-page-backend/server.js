@@ -25,14 +25,9 @@ const app = express();
 
 // Updated CORS configuration
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? [
-        'https://status-app-backend-kow1.onrender.com', 
-        'https://your-custom-domain.com'
-      ] 
-    : 'http://localhost:5173', // Replace with your frontend's origin
+  origin: '*', // Allow requests from any origin
   methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allowed HTTP methods
-  credentials: true // If you need to send cookies or authentication headers
+  credentials: false // Disable credentials for open access
 }));
 
 app.use(express.json());
