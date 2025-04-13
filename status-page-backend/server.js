@@ -30,8 +30,9 @@ app.use(cors({
         'https://status-app-backend-kow1.onrender.com', 
         'https://your-custom-domain.com'
       ] 
-    : 'http://localhost:8080',
-  credentials: true
+    : 'http://localhost:5173',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allowed HTTP methods
+  credentials: true // If you need to send cookies or authentication headers
 }));
 
 app.use(express.json());
@@ -59,6 +60,11 @@ app.use('/api/services', serviceRoutes);
 app.use('/api/incidents', incidentRoutes);
 app.use('/api/maintenance', maintenanceRoutes);
 app.use('/api/v1/website', websiteRoutes); // Mount website routes
+
+// Additional route for CORS testing
+app.get('/api/services', (req, res) => {
+  res.json({ message: 'CORS is now enabled!' });
+});
 
 // Error handling middleware
 app.use(errorHandler);
