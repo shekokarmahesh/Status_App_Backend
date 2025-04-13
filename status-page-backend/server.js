@@ -27,7 +27,7 @@ const app = express();
 app.use(cors({
   origin: '*', // Allow requests from any origin
   methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allowed HTTP methods
-  credentials: false // Disable credentials for open access
+  credentials: true // Disable credentials for open access
 }));
 
 app.use(express.json());
